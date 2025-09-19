@@ -1,0 +1,35 @@
+{
+  "name": "CrystalCavernAdventure",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Modules": {
+        "$className": "Folder",
+        "$path": "src/ReplicatedStorage/Modules"
+      },
+      "Assets": {
+        "$className": "Folder",
+        "$path": "src/ReplicatedStorage/Assets"
+      },
+      "Remotes": {
+        "$className": "Folder"
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$path": "src/ServerScriptService"
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$path": "src/StarterPlayer/StarterPlayerScripts"
+      }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "$path": "src/Workspace"
+    }
+  }
+}
