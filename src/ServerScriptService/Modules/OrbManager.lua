@@ -53,6 +53,7 @@ local function collectOrb(player, orb)
     local zoneIndex = orb:GetAttribute("ZoneIndex")
     local value = orb:GetAttribute("Value") or 1
     local isRare = orb:GetAttribute("IsRare") == true
+    local rareValue = orb:GetAttribute("RareValue") or value
 
     local session = SessionService.GetSession(player)
     if not session then
@@ -68,8 +69,14 @@ local function collectOrb(player, orb)
         return
     end
 
-    if isRare and monetization and monetization.PlayerHasPass(player, "LuckyAura") then
-        value = math.floor(value * (1 + Config.Gamepasses.LuckyAura.RareBonus))
+    if monetization and monetization.PlayerHasPass(player, "LUCKY_AURA") then
+        local luckBonus = Config.Gamepasses.LUCKY_AURA.LuckBonus or 0
+        if not isRare and luckBonus > 0 then
+            if math.random() < luckBonus then
+                isRare = true
+                value = rareValue
+            end
+        end
     end
 
     orb:SetAttribute("Collected", true)
@@ -130,6 +137,7 @@ local function spawnOrbInZone(zoneIndex)
 
     orb:SetAttribute("ZoneIndex", zoneIndex)
     orb:SetAttribute("Value", value)
+    orb:SetAttribute("RareValue", zoneConfig.RareOrbValue)
     orb:SetAttribute("IsRare", isRare)
 
     orb.Touched:Connect(function(part)
@@ -180,9 +188,14 @@ local function runAutoCollector(player)
     local threadRef = autoCollectorThreads[player]
 
     task.spawn(function()
-        local settings = Config.Gamepasses.AutoCollector
+        local settings = Config.Gamepasses.AUTO_COLLECTOR
         while threadRef and not threadRef.cancelled do
-            if not monetization or not monetization.PlayerHasPass(player, "AutoCollector") then
+            if not monetization or not monetization.PlayerHasPass(player, "AUTO_COLLECTOR") then
+                break
+            end
+
+            local settingEnabled = SessionService.GetSetting(player, "AutoCollector")
+            if settingEnabled == false then
                 break
             end
 
@@ -209,8 +222,21 @@ local function runAutoCollector(player)
     end)
 end
 
+local function isAutoCollectorEnabled(player)
+    if not monetization or not monetization.PlayerHasPass(player, "AUTO_COLLECTOR") then
+        return false
+    end
+
+    local setting = SessionService.GetSetting(player, "AutoCollector")
+    if setting == nil then
+        return true
+    end
+
+    return setting == true
+end
+
 local function ensureAutoCollector(player)
-    if monetization and monetization.PlayerHasPass(player, "AutoCollector") then
+    if isAutoCollectorEnabled(player) then
         runAutoCollector(player)
     else
         stopAutoCollector(player)
@@ -225,7 +251,7 @@ function OrbManager.Init(mapRefs, remoteTable, monetizationModule, updateCallbac
 
     if monetization and monetization.OnPassUnlocked then
         monetization.OnPassUnlocked(function(player, passKey)
-            if passKey == "AutoCollector" then
+            if passKey == "AUTO_COLLECTOR" then
                 task.defer(ensureAutoCollector, player)
             end
         end)
@@ -246,6 +272,10 @@ end
 
 function OrbManager.UnregisterPlayer(player)
     stopAutoCollector(player)
+end
+
+function OrbManager.UpdateAutoCollector(player)
+    ensureAutoCollector(player)
 end
 
 return OrbManager

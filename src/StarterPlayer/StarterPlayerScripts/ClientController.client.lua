@@ -53,7 +53,7 @@ end
 
 local mainPanel = Instance.new("Frame")
 mainPanel.Name = "StatsPanel"
-mainPanel.Size = UDim2.new(0, 280, 0, 170)
+mainPanel.Size = UDim2.new(0, 300, 0, 220)
 mainPanel.Position = UDim2.new(0, 20, 0, 20)
 mainPanel.BackgroundColor3 = Color3.fromRGB(32, 41, 69)
 mainPanel.BorderSizePixel = 0
@@ -83,10 +83,45 @@ rebirthLabel.TextXAlignment = Enum.TextXAlignment.Left
 local boostLabel = createLabel(mainPanel, "Boosts: None", UDim2.new(1, -20, 0, 22), UDim2.new(0, 10, 0, 152), false)
 boostLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+local vipStatusLabel = createLabel(mainPanel, "Status: Adventurer", UDim2.new(1, -20, 0, 22), UDim2.new(0, 10, 0, 176), false)
+vipStatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+vipStatusLabel.TextColor3 = Color3.fromRGB(255, 229, 115)
+
+local abilityContainer = Instance.new("Frame")
+abilityContainer.Name = "AbilityContainer"
+abilityContainer.BackgroundTransparency = 1
+abilityContainer.Size = UDim2.new(1, -20, 0, 36)
+abilityContainer.Position = UDim2.new(0, 10, 1, -46)
+abilityContainer.Parent = mainPanel
+
+local sprintToggleButton = Instance.new("TextButton")
+sprintToggleButton.Name = "SprintToggle"
+sprintToggleButton.Size = UDim2.new(0.5, -6, 1, 0)
+sprintToggleButton.Position = UDim2.new(0, 0, 0, 0)
+sprintToggleButton.BackgroundColor3 = Color3.fromRGB(67, 94, 160)
+sprintToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+sprintToggleButton.BorderSizePixel = 0
+sprintToggleButton.Font = fontBold
+sprintToggleButton.TextScaled = true
+sprintToggleButton.Text = "Hyper Sprint"
+sprintToggleButton.Parent = abilityContainer
+
+local autoToggleButton = Instance.new("TextButton")
+autoToggleButton.Name = "AutoToggle"
+autoToggleButton.Size = UDim2.new(0.5, -6, 1, 0)
+autoToggleButton.Position = UDim2.new(0.5, 6, 0, 0)
+autoToggleButton.BackgroundColor3 = Color3.fromRGB(67, 94, 160)
+autoToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoToggleButton.BorderSizePixel = 0
+autoToggleButton.Font = fontBold
+autoToggleButton.TextScaled = true
+autoToggleButton.Text = "Auto Collector"
+autoToggleButton.Parent = abilityContainer
+
 local upgradesPanel = Instance.new("Frame")
 upgradesPanel.Name = "UpgradesPanel"
-upgradesPanel.Size = UDim2.new(0, 260, 0, 280)
-upgradesPanel.Position = UDim2.new(0, 20, 0, 210)
+upgradesPanel.Size = UDim2.new(0, 280, 0, 300)
+upgradesPanel.Position = UDim2.new(0, 20, 0, 260)
 upgradesPanel.BackgroundColor3 = Color3.fromRGB(28, 32, 52)
 upgradesPanel.BorderSizePixel = 0
 upgradesPanel.ZIndex = 3
@@ -230,13 +265,64 @@ local function setButtonState(button, enabled, text)
     end
 end
 
+local function updateAbilityButtons()
+    local passes = currentState and currentState.Gamepasses or {}
+    local settings = currentState and currentState.Settings or {}
+
+    local isVip = passes and passes.VIP
+    if isVip then
+        vipStatusLabel.Text = "Status: Crystal VIP"
+        vipStatusLabel.TextColor3 = Color3.fromRGB(255, 229, 115)
+    else
+        vipStatusLabel.Text = "Status: Adventurer"
+        vipStatusLabel.TextColor3 = Color3.fromRGB(194, 206, 255)
+    end
+
+    local hasSprint = passes and passes.HYPER_SPRINT
+    local sprintEnabled = settings and settings.HyperSprint == true
+    if hasSprint then
+        if sprintEnabled then
+            sprintToggleButton.Text = "Hyper Sprint\n[ON]"
+            sprintToggleButton.BackgroundColor3 = Color3.fromRGB(93, 204, 146)
+        else
+            sprintToggleButton.Text = "Hyper Sprint\n[OFF]"
+            sprintToggleButton.BackgroundColor3 = Color3.fromRGB(67, 94, 160)
+        end
+        sprintToggleButton.AutoButtonColor = true
+    else
+        sprintToggleButton.Text = "Hyper Sprint\nUnlock Gamepass"
+        sprintToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        sprintToggleButton.AutoButtonColor = true
+    end
+
+    local hasAuto = passes and passes.AUTO_COLLECTOR
+    local autoEnabled = settings and settings.AutoCollector
+    if autoEnabled == nil then
+        autoEnabled = true
+    end
+    if hasAuto then
+        if autoEnabled then
+            autoToggleButton.Text = "Auto Collector\n[ON]"
+            autoToggleButton.BackgroundColor3 = Color3.fromRGB(93, 204, 146)
+        else
+            autoToggleButton.Text = "Auto Collector\n[OFF]"
+            autoToggleButton.BackgroundColor3 = Color3.fromRGB(67, 94, 160)
+        end
+        autoToggleButton.AutoButtonColor = true
+    else
+        autoToggleButton.Text = "Auto Collector\nUnlock Gamepass"
+        autoToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        autoToggleButton.AutoButtonColor = true
+    end
+end
+
 local function rebuildShop()
     shopScroll:ClearAllChildren()
     shopLayout.Parent = shopScroll
 
     local entryIndex = 0
 
-    local function createEntry(title, subtitle, priceText, purchaseData, owned)
+    local function createEntry(title, subtitle, priceText, purchaseData, owned, customClick, customColor)
         entryIndex += 1
         local entry = Instance.new("Frame")
         entry.Size = UDim2.new(1, -4, 0, 90)
@@ -256,10 +342,10 @@ local function rebuildShop()
         entrySubtitle.ZIndex = 7
 
         local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0, 140, 0, 32)
-        button.Position = UDim2.new(1, -150, 1, -42)
+        button.Size = UDim2.new(0, 160, 0, 32)
+        button.Position = UDim2.new(1, -170, 1, -42)
         button.AnchorPoint = Vector2.new(0, 0)
-        button.BackgroundColor3 = Color3.fromRGB(76, 151, 255)
+        button.BackgroundColor3 = customColor or Color3.fromRGB(76, 151, 255)
         button.TextColor3 = Color3.fromRGB(255, 255, 255)
         button.Font = fontBold
         button.TextScaled = true
@@ -271,6 +357,8 @@ local function rebuildShop()
             button.Text = "Owned"
             button.AutoButtonColor = false
             button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+        elseif customClick then
+            button.MouseButton1Click:Connect(customClick)
         elseif purchaseData then
             button.MouseButton1Click:Connect(function()
                 remotes.PurchaseRequest:FireServer(purchaseData)
@@ -282,7 +370,7 @@ local function rebuildShop()
         end
     end
 
-    local passOrder = {"VIP", "Speed", "InfiniteStorage", "LuckyAura", "AutoCollector"}
+    local passOrder = {"VIP", "HYPER_SPRINT", "INFINITE_STORAGE", "LUCKY_AURA", "AUTO_COLLECTOR"}
     for _, key in ipairs(passOrder) do
         local info = Config.Gamepasses[key]
         if info then
@@ -315,6 +403,40 @@ local function rebuildShop()
             priceText = string.format("Set ID • R$ %d", boost.Price)
         end
         createEntry(boost.Name, subtitle, priceText, purchaseData, false)
+    end
+
+    local hasVip = currentState and currentState.Gamepasses and currentState.Gamepasses.VIP
+    if hasVip then
+        for _, item in ipairs(Config.VIPShop) do
+            local priceText = string.format("%s Energy", formatNumber(item.Cost))
+            local subtitle = string.format("%s", item.Description)
+            createEntry(
+                item.Name,
+                subtitle,
+                priceText,
+                nil,
+                false,
+                function()
+                    remotes.ActionRequest:FireServer("PurchaseVIPItem", { Key = item.Key })
+                end,
+                Color3.fromRGB(104, 209, 140)
+            )
+        end
+    else
+        local vipInfo = Config.Gamepasses.VIP
+        local subtitle = "Unlock Crystal VIP to access exclusive boosts"
+        local priceText
+        local purchaseData
+        if vipInfo then
+            priceText = string.format("Unlock VIP • R$ %d", vipInfo.Price)
+            if vipInfo.Id ~= 0 then
+                purchaseData = { Type = "Gamepass", Key = "VIP" }
+            end
+        else
+            priceText = "Unlock VIP"
+        end
+
+        createEntry("VIP Crystal Boutique", subtitle, priceText, purchaseData, false)
     end
 
     shopScroll.CanvasSize = UDim2.new(0, 0, 0, shopLayout.AbsoluteContentSize.Y)
@@ -388,6 +510,7 @@ local function updateUI()
         setButtonState(buttons.Rebirth, false, "Unlock all zones first")
     end
 
+    updateAbilityButtons()
     rebuildShop()
 end
 
@@ -446,6 +569,33 @@ end)
 
 remotes.Tutorial.OnClientEvent:Connect(function(message)
     showTutorial(message)
+end)
+
+sprintToggleButton.MouseButton1Click:Connect(function()
+    local passes = currentState and currentState.Gamepasses or {}
+    if not (passes and passes.HYPER_SPRINT) then
+        remotes.PurchaseRequest:FireServer({ Type = "Gamepass", Key = "HYPER_SPRINT" })
+        return
+    end
+
+    local settings = currentState and currentState.Settings or {}
+    local enabled = settings and settings.HyperSprint == true
+    remotes.ActionRequest:FireServer("ToggleHyperSprint", not enabled)
+end)
+
+autoToggleButton.MouseButton1Click:Connect(function()
+    local passes = currentState and currentState.Gamepasses or {}
+    if not (passes and passes.AUTO_COLLECTOR) then
+        remotes.PurchaseRequest:FireServer({ Type = "Gamepass", Key = "AUTO_COLLECTOR" })
+        return
+    end
+
+    local settings = currentState and currentState.Settings or {}
+    local enabled = settings and settings.AutoCollector
+    if enabled == nil then
+        enabled = true
+    end
+    remotes.ActionRequest:FireServer("ToggleAutoCollector", not enabled)
 end)
 
 shopToggle.MouseButton1Click:Connect(function()

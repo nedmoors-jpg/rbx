@@ -1,6 +1,6 @@
 local Config = {}
 
-Config.GameName = "Crystal Rush Tycoon"
+Config.GameName = "Crystal Rush"
 Config.ZoneSpacing = 220
 Config.ZoneY = 0
 Config.ZoneSize = Vector3.new(140, 1, 140)
@@ -113,39 +113,60 @@ Config.Rebirth = {
 
 Config.Gamepasses = {
     VIP = {
-        Name = "VIP Quantum Membership",
-        Benefit = "Permanent 2x deposit multiplier, golden name tag",
+        Name = "Crystal VIP",
+        Benefit = "+10% Energy, VIP chat tag, exclusive shop",
         Price = 399,
-        Id = 0,
-        MultiplierBonus = 2
+        Id = 1476014436,
+        DepositBonus = 0.1,
+        ChatTag = "VIP",
+        ChatColor = Color3.fromRGB(255, 226, 110)
     },
-    Speed = {
+    HYPER_SPRINT = {
         Name = "Hyper Sprint",
-        Benefit = "+6 WalkSpeed permanently",
+        Benefit = "+50% movement speed toggle",
         Price = 149,
-        Id = 0,
-        ExtraSpeed = 6
+        Id = 1475776403,
+        SpeedMultiplier = 1.5
     },
-    InfiniteStorage = {
+    INFINITE_STORAGE = {
         Name = "Infinite Storage",
         Benefit = "Never run out of backpack space",
         Price = 799,
-        Id = 0
+        Id = 1476396573
     },
-    LuckyAura = {
+    LUCKY_AURA = {
         Name = "Lucky Aura",
-        Benefit = "50% more rare shards whenever you collect",
+        Benefit = "+20% luck for rare shards and pet rolls",
         Price = 249,
-        Id = 0,
-        RareBonus = 0.5
+        Id = 1476674539,
+        LuckBonus = 0.2
     },
-    AutoCollector = {
+    AUTO_COLLECTOR = {
         Name = "Auto Collector Drone",
         Benefit = "Automatically vacuum nearby shards",
         Price = 499,
-        Id = 0,
+        Id = 1475412430,
         Radius = 14,
         Interval = 1.5
+    }
+}
+
+Config.VIPShop = {
+    {
+        Key = "VipBoost10",
+        Name = "VIP Turbo Boost",
+        Description = "x2 converter boost for 10 minutes",
+        Cost = 4500,
+        Multiplier = 2,
+        Duration = 600
+    },
+    {
+        Key = "VipBoost30",
+        Name = "VIP Radiant Surge",
+        Description = "x2.5 converter boost for 30 minutes",
+        Cost = 12500,
+        Multiplier = 2.5,
+        Duration = 1800
     }
 }
 

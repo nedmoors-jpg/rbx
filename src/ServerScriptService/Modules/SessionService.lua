@@ -17,7 +17,10 @@ local DEFAULT_DATA = {
     ConverterLevel = 1,
     ZoneLevel = 1,
     Rebirths = 0,
-    Settings = {},
+    Settings = {
+        HyperSprint = false,
+        AutoCollector = true
+    },
     TutorialStep = 0
 }
 
@@ -37,6 +40,16 @@ end
 
 local function createDefaultData()
     return deepCopy(DEFAULT_DATA)
+end
+
+local function ensureSettings(session)
+    session.Data.Settings = session.Data.Settings or {}
+    if session.Data.Settings.HyperSprint == nil then
+        session.Data.Settings.HyperSprint = false
+    end
+    if session.Data.Settings.AutoCollector == nil then
+        session.Data.Settings.AutoCollector = true
+    end
 end
 
 local function getKey(player)
@@ -92,6 +105,7 @@ function SessionService.CreateSession(player)
         LastDeposit = 0
     }
 
+    ensureSettings(session)
     sessions[player] = session
     return session
 end
@@ -195,6 +209,7 @@ function SessionService.RecordRebirth(player)
     session.Data.ConverterLevel = 1
     session.Data.ZoneLevel = 1
     session.Inventory = 0
+    ensureSettings(session)
 end
 
 function SessionService.AddBoost(player, key, data)
@@ -203,6 +218,30 @@ function SessionService.AddBoost(player, key, data)
         return
     end
     session.Boosts[key] = data
+end
+
+function SessionService.GetSettings(player)
+    local session = sessions[player]
+    if not session then
+        return {}
+    end
+    ensureSettings(session)
+    return session.Data.Settings
+end
+
+function SessionService.GetSetting(player, key)
+    local settings = SessionService.GetSettings(player)
+    return settings[key]
+end
+
+function SessionService.SetSetting(player, key, value)
+    local session = sessions[player]
+    if not session then
+        return
+    end
+
+    ensureSettings(session)
+    session.Data.Settings[key] = value
 end
 
 function SessionService.GetBoosts(player)
