@@ -9,6 +9,7 @@ local Monetization = require(script.Parent.Modules.Monetization)
 local UpgradeService = require(script.Parent.Modules.UpgradeService)
 local OrbManager = require(script.Parent.Modules.OrbManager)
 local ChatEffects = require(script.Parent.Modules.ChatEffects)
+local EventService = require(script.Parent.Modules.EventService)
 
 local remotes = RemotesModule.get()
 local mapReferences = MapBuilder.build()
@@ -99,6 +100,10 @@ local function sendState(player)
     end
 
     updateLeaderstats(player, summary)
+    local eventSummary = EventService.GetEventSummary()
+    if eventSummary then
+        summary.ActiveEvent = eventSummary
+    end
     remotes.StateUpdate:FireClient(player, summary)
 end
 
@@ -122,6 +127,7 @@ end)
 
 Monetization.Init(remotes)
 OrbManager.Init(mapReferences, remotes, Monetization, sendState)
+EventService.Init(remotes, OrbManager, sendState)
 
 local function handleDeposit(player)
     local session = SessionService.GetSession(player)
@@ -137,9 +143,12 @@ local function handleDeposit(player)
     player:SetAttribute("LastDepositTime", now)
 
     local multiplier = UpgradeService.GetConverterMultiplier(player)
-    local amount = math.floor(session.Inventory * multiplier)
+    local comboInfo = SessionService.GetComboInfo(player)
+    local comboMultiplier = comboInfo and comboInfo.Multiplier or 1
+    local amount = math.floor(session.Inventory * multiplier * comboMultiplier)
     if amount <= 0 then
         SessionService.SetInventory(player, 0)
+        SessionService.ResetCombo(player)
         return
     end
 
@@ -148,8 +157,13 @@ local function handleDeposit(player)
         amount = math.floor(amount * (1 + bonus))
     end
     SessionService.SetInventory(player, 0)
+    SessionService.ResetCombo(player)
     SessionService.AdjustEnergy(player, amount)
-    remotes.Notify:FireClient(player, string.format("Deposited for %d Energy", amount))
+    local message = string.format("Deposited for %d Energy", amount)
+    if comboInfo and comboInfo.Count and comboInfo.Count > 1 then
+        message = message .. string.format(" (Combo x%d)", comboInfo.Count)
+    end
+    remotes.Notify:FireClient(player, message)
     sendState(player)
 end
 

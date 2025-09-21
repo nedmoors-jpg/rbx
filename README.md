@@ -4,11 +4,11 @@ Crystal Rush is a fast-paced shard collecting adventure built for Roblox. Player
 
 ## Core Features
 
-- **Dynamic world building** – The map is generated at runtime with teleport pads, return portals, and orb spawners for every zone.
+- **Sculpted crystal biomes** – The procedural map now layers platforms, props, fountains, and teleporter portals tailored to each zone theme.
+- **Crystal surge events** – Server-driven anomalies periodically supercharge a random zone with faster spawns, brighter lighting, and high-value burst crystals.
+- **Combo mastery** – Chain shard pickups to earn temporary deposit bonuses; the HUD surfaces combo timers, rewards, and progress.
 - **Intuitive progression loop** – Collect orbs, deposit for Energy, upgrade stats, and unlock harder zones with better shard payouts.
-- **Orb rarity system** – Every zone has a chance to spawn rare shards worth significantly more Energy.
-- **Boost & rebirth support** – Time-limited converter boosts and repeatable rebirth prestige keep progression lively.
-- **Responsive UI** – Live stats, upgrade buttons, tutorial prompts, notifications, and an in-game shop are all rendered entirely with scripts.
+- **Responsive UI** – A refreshed HUD displays milestones, zone progress, active events, boosts, and monetization hooks in a single glance.
 
 ## Monetization Hooks
 
@@ -24,7 +24,13 @@ All gamepasses are wired to Roblox `MarketplaceService` IDs and include gameplay
 
 - The shop UI can prompt both gamepass purchases and developer product sales (energy packs and boosts).
 - VIP owners unlock an Energy-based VIP boutique that grants timed converter boosts.
-- Hyper Sprint and Auto Collector include toggle buttons in the HUD for quick control.
+- Hyper Sprint and Auto Collector include stylised HUD toggles with live ownership states.
+
+## Dynamic Events & Combos
+
+- **Crystal Surge** and **Prismatic Bloom** events rotate automatically, increasing orb density, value, and visuals for a highlighted zone.
+- Event timers, zone names, and descriptions are broadcast through an animated banner so players can react instantly.
+- Every shard pickup feeds a combo meter that rewards sustained runs with deposit multipliers; the meter expires if players slow down.
 
 ## Controls & Flow
 
@@ -52,7 +58,8 @@ src/
 │       ├── OrbManager.lua
 │       ├── Remotes.lua
 │       ├── SessionService.lua
-│       └── UpgradeService.lua
+│       ├── UpgradeService.lua
+│       └── EventService.lua
 └── StarterPlayer
     └── StarterPlayerScripts
         └── ClientController.client.lua

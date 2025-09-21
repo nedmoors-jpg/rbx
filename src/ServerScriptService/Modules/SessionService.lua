@@ -52,6 +52,11 @@ local function ensureSettings(session)
     end
 end
 
+local function ensureCombo(session)
+    session.Combo = session.Combo or { Count = 0, Expires = 0, Best = 0 }
+    return session.Combo
+end
+
 local function getKey(player)
     return string.format("Player_%d", player.UserId)
 end
@@ -106,6 +111,7 @@ function SessionService.CreateSession(player)
     }
 
     ensureSettings(session)
+    ensureCombo(session)
     sessions[player] = session
     return session
 end
@@ -210,6 +216,9 @@ function SessionService.RecordRebirth(player)
     session.Data.ZoneLevel = 1
     session.Inventory = 0
     ensureSettings(session)
+    local combo = ensureCombo(session)
+    combo.Count = 0
+    combo.Expires = 0
 end
 
 function SessionService.AddBoost(player, key, data)
@@ -218,6 +227,64 @@ function SessionService.AddBoost(player, key, data)
         return
     end
     session.Boosts[key] = data
+end
+
+function SessionService.RegisterComboHit(player)
+    local session = sessions[player]
+    if not session then
+        return 0
+    end
+
+    local combo = ensureCombo(session)
+    local now = os.clock()
+    local window = (Config.Combo and Config.Combo.Window) or 4
+
+    if now <= (combo.Expires or 0) then
+        combo.Count += 1
+    else
+        combo.Count = 1
+    end
+
+    combo.Expires = now + window
+    combo.Best = math.max(combo.Best or 0, combo.Count)
+
+    return combo.Count
+end
+
+function SessionService.ResetCombo(player)
+    local session = sessions[player]
+    if not session then
+        return
+    end
+
+    local combo = ensureCombo(session)
+    combo.Count = 0
+    combo.Expires = 0
+end
+
+function SessionService.GetComboInfo(player)
+    local session = sessions[player]
+    if not session then
+        return { Count = 0, Multiplier = 1, Remaining = 0, Best = 0 }
+    end
+
+    local combo = ensureCombo(session)
+    local now = os.clock()
+    if now > (combo.Expires or 0) then
+        combo.Count = 0
+    end
+
+    local perHit = (Config.Combo and Config.Combo.BonusPerStreak) or 0
+    local maxBonus = (Config.Combo and Config.Combo.MaxBonus) or 0
+    local bonus = math.clamp((combo.Count - 1) * perHit, 0, maxBonus)
+    local remaining = math.max(0, (combo.Expires or 0) - now)
+
+    return {
+        Count = combo.Count,
+        Multiplier = 1 + bonus,
+        Remaining = remaining,
+        Best = combo.Best or combo.Count
+    }
 end
 
 function SessionService.GetSettings(player)

@@ -15,6 +15,19 @@ local stateUpdateCallback
 local activeOrbs = {}
 local spawnThreads = {}
 local autoCollectorThreads = {}
+local eventModifier
+
+local function cloneTable(tbl)
+    local copy = {}
+    for key, value in pairs(tbl) do
+        if typeof(value) == "table" then
+            copy[key] = cloneTable(value)
+        else
+            copy[key] = value
+        end
+    end
+    return copy
+end
 
 local function fireStateUpdate(player)
     if stateUpdateCallback then
@@ -22,14 +35,15 @@ local function fireStateUpdate(player)
     end
 end
 
-local function randomOrbPosition(zonePart)
+local function randomOrbPosition(zonePart, heightOffset)
     local size = zonePart.Size
     local margin = 8
     local xRange = math.max(4, size.X - margin)
     local zRange = math.max(4, size.Z - margin)
     local offsetX = (math.random() - 0.5) * xRange
     local offsetZ = (math.random() - 0.5) * zRange
-    return zonePart.Position + Vector3.new(offsetX, 3, offsetZ)
+    local baseY = zonePart.Position.Y + (zonePart.Size.Y / 2)
+    return zonePart.Position + Vector3.new(offsetX, (heightOffset or 0) + baseY + 2.6, offsetZ)
 end
 
 local function markOrbDestroyed(zoneIndex, orb)
@@ -79,10 +93,25 @@ local function collectOrb(player, orb)
         end
     end
 
+    local comboCount = SessionService.RegisterComboHit(player)
+    local comboInfo = SessionService.GetComboInfo(player)
+
     orb:SetAttribute("Collected", true)
     destroyOrb(zoneIndex, orb)
 
     SessionService.AddInventory(player, value)
+
+    if remotes and remotes.Notify and comboCount > 1 then
+        local threshold = (Config.Combo and Config.Combo.NotifyThreshold) or 5
+        if comboCount % threshold == 0 then
+            local bonusPercent = math.floor((comboInfo.Multiplier - 1) * 100)
+            remotes.Notify:FireClient(
+                player,
+                string.format("Combo x%d! +%d%% deposit bonus", comboCount, bonusPercent)
+            )
+        end
+    end
+
     fireStateUpdate(player)
 end
 
@@ -104,7 +133,13 @@ local function onOrbTouched(orb, otherPart)
     collectOrb(player, orb)
 end
 
-local function spawnOrbInZone(zoneIndex)
+local function getActiveModifier(zoneIndex)
+    if eventModifier and eventModifier.ZoneIndex == zoneIndex then
+        return eventModifier
+    end
+end
+
+local function spawnOrbInZone(zoneIndex, overrides)
     local zonePart = mapReferences.ZonePlatforms[zoneIndex]
     local container = mapReferences.OrbContainers[zoneIndex]
     local zoneConfig = Config.getZone(zoneIndex)
@@ -113,32 +148,81 @@ local function spawnOrbInZone(zoneIndex)
         return
     end
 
+    local modifier = getActiveModifier(zoneIndex)
     local orb = Instance.new("Part")
-    orb.Name = "EnergyOrb"
-    orb.Shape = Enum.PartType.Ball
-    orb.Size = Vector3.new(2.6, 2.6, 2.6)
-    orb.Material = Enum.Material.Neon
-    orb.Color = zoneConfig.OrbColor
+    orb.Name = overrides and overrides.Name or "EnergyOrb"
+    orb.Shape = overrides and overrides.Shape or Enum.PartType.Ball
+    orb.Size = overrides and overrides.Size or Vector3.new(2.8, 2.8, 2.8)
+    orb.Material = overrides and overrides.Material or Enum.Material.Neon
     orb.Anchored = true
     orb.CanCollide = false
-    orb.Position = randomOrbPosition(zonePart)
+    orb.Position = randomOrbPosition(zonePart, overrides and overrides.HeightOffset or 0)
 
-    local isRare = math.random() < zoneConfig.RareChance
-    local value = zoneConfig.OrbValue
-    if isRare then
-        value = zoneConfig.RareOrbValue
-        orb.Color = zoneConfig.OrbColor:lerp(Color3.fromRGB(255, 255, 255), 0.35)
+    local baseValue = overrides and overrides.Value or zoneConfig.OrbValue
+    local rareValue = overrides and overrides.RareValue or zoneConfig.RareOrbValue
+    local valueMultiplier = 1
+
+    if modifier and modifier.ValueMultiplier then
+        valueMultiplier *= modifier.ValueMultiplier
+    end
+    if overrides and overrides.ValueMultiplier then
+        valueMultiplier *= overrides.ValueMultiplier
+    end
+
+    baseValue = math.max(1, math.floor(baseValue * valueMultiplier))
+    rareValue = math.max(baseValue + 1, math.floor(rareValue * valueMultiplier))
+
+    local rareChance = overrides and overrides.RareChance or zoneConfig.RareChance
+    if modifier and modifier.RareChanceBonus then
+        rareChance += modifier.RareChanceBonus
+    end
+    if overrides and overrides.RareChanceBonus then
+        rareChance += overrides.RareChanceBonus
+    end
+    rareChance = math.clamp(rareChance, 0, 1)
+
+    local isRare
+    if overrides and overrides.ForceRare then
+        isRare = true
+    else
+        isRare = math.random() < rareChance
+    end
+
+    local color = overrides and overrides.Color or zoneConfig.OrbColor
+    if modifier and modifier.ColorShift then
+        local blend = modifier.ColorBlend or 0.45
+        color = color:Lerp(modifier.ColorShift, blend)
+    end
+
+    if isRare and not (overrides and overrides.KeepRareColor) then
+        color = color:lerp(Color3.fromRGB(255, 255, 255), 0.35)
+    end
+
+    orb.Color = color
+
+    orb:SetAttribute("ZoneIndex", zoneIndex)
+    local storedValue = isRare and rareValue or baseValue
+    orb:SetAttribute("Value", storedValue)
+    orb:SetAttribute("RareValue", rareValue)
+    orb:SetAttribute("IsRare", isRare)
+    if overrides and overrides.IsEvent then
+        orb:SetAttribute("IsEvent", true)
+    end
+
+    local shouldGlow = (modifier and modifier.Glow) or (overrides and overrides.Glow) or isRare
+    if shouldGlow then
         local light = Instance.new("PointLight")
-        light.Color = orb.Color
-        light.Brightness = 2
-        light.Range = 12
+        light.Color = overrides and overrides.LightColor or color
+        light.Brightness = overrides and overrides.LightBrightness or (isRare and 2.2 or 1.6)
+        light.Range = overrides and overrides.LightRange or 16
         light.Parent = orb
     end
 
-    orb:SetAttribute("ZoneIndex", zoneIndex)
-    orb:SetAttribute("Value", value)
-    orb:SetAttribute("RareValue", zoneConfig.RareOrbValue)
-    orb:SetAttribute("IsRare", isRare)
+    if overrides and overrides.Sparkle then
+        local sparkle = Instance.new("Sparkles")
+        sparkle.SparkleColor = overrides.SparkleColor or color
+        sparkle.Parent = orb
+    end
 
     orb.Touched:Connect(function(part)
         onOrbTouched(orb, part)
@@ -147,6 +231,12 @@ local function spawnOrbInZone(zoneIndex)
     orb.Parent = container
     activeOrbs[zoneIndex] = activeOrbs[zoneIndex] or {}
     activeOrbs[zoneIndex][orb] = true
+
+    if overrides and overrides.Duration then
+        task.delay(overrides.Duration, function()
+            destroyOrb(zoneIndex, orb)
+        end)
+    end
 end
 
 local function maintainZone(zoneIndex)
@@ -156,11 +246,22 @@ local function maintainZone(zoneIndex)
             return
         end
 
-        local target = math.min(zoneConfig.OrbDensity, Config.MaxOrbsPerZone)
         while true do
             local container = mapReferences.OrbContainers[zoneIndex]
             if not container then
                 break
+            end
+
+            local modifier = getActiveModifier(zoneIndex)
+            local densityMultiplier = modifier and (modifier.TargetMultiplier or 1) or 1
+            local baseTarget = zoneConfig.OrbDensity
+            local computedTarget = math.floor(baseTarget * densityMultiplier + 0.5)
+            if densityMultiplier < 1 then
+                computedTarget = math.max(computedTarget, math.floor(baseTarget * 0.6))
+            end
+            local target = math.clamp(computedTarget, 6, Config.MaxOrbsPerZone * 2)
+            if target <= 0 then
+                target = math.min(baseTarget, Config.MaxOrbsPerZone)
             end
 
             local existing = #container:GetChildren()
@@ -168,7 +269,9 @@ local function maintainZone(zoneIndex)
                 spawnOrbInZone(zoneIndex)
             end
 
-            task.wait(Config.OrbRespawnSeconds + math.random())
+            local rateMultiplier = modifier and (modifier.SpawnRateMultiplier or 1) or 1
+            local waitTime = math.max(0.5, (Config.OrbRespawnSeconds / rateMultiplier) + math.random())
+            task.wait(waitTime)
         end
     end)
 end
@@ -248,6 +351,7 @@ function OrbManager.Init(mapRefs, remoteTable, monetizationModule, updateCallbac
     remotes = remoteTable
     monetization = monetizationModule
     stateUpdateCallback = updateCallback
+    eventModifier = nil
 
     if monetization and monetization.OnPassUnlocked then
         monetization.OnPassUnlocked(function(player, passKey)
@@ -276,6 +380,60 @@ end
 
 function OrbManager.UpdateAutoCollector(player)
     ensureAutoCollector(player)
+end
+
+function OrbManager.SetEventModifier(modifier)
+    if typeof(modifier) ~= "table" or not modifier.ZoneIndex then
+        eventModifier = nil
+        return
+    end
+
+    eventModifier = cloneTable(modifier)
+end
+
+function OrbManager.ClearEventModifier(zoneIndex)
+    if not eventModifier then
+        return
+    end
+
+    if not zoneIndex or eventModifier.ZoneIndex == zoneIndex then
+        eventModifier = nil
+    end
+end
+
+function OrbManager.GetEventModifier()
+    if not eventModifier then
+        return nil
+    end
+
+    return cloneTable(eventModifier)
+end
+
+function OrbManager.SpawnBurst(zoneIndex, burstConfig)
+    if not burstConfig then
+        return
+    end
+
+    local count = math.max(1, math.floor(burstConfig.Count or 3))
+    for _ = 1, count do
+        spawnOrbInZone(zoneIndex, {
+            Name = burstConfig.Name or "EventCrystal",
+            Size = burstConfig.Size,
+            Material = burstConfig.Material,
+            ValueMultiplier = burstConfig.ValueMultiplier or 4,
+            Duration = burstConfig.Duration or 12,
+            Color = burstConfig.Color,
+            Glow = burstConfig.Glow ~= false,
+            Sparkle = burstConfig.Sparkle ~= false,
+            SparkleColor = burstConfig.SparkleColor,
+            LightBrightness = burstConfig.LightBrightness,
+            LightRange = burstConfig.LightRange,
+            HeightOffset = burstConfig.HeightOffset or 3,
+            ForceRare = burstConfig.ForceRare ~= false,
+            RareChanceBonus = burstConfig.RareChanceBonus,
+            IsEvent = true
+        })
+    end
 end
 
 return OrbManager

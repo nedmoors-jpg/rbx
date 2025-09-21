@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local SessionService = require(script.Parent:WaitForChild("SessionService"))
@@ -157,6 +158,9 @@ function UpgradeService.GetStateSummary(player)
         }
     end
     summary.ActiveBoosts = boostSummary
+
+    summary.Combo = SessionService.GetComboInfo(player)
+    summary.ServerTime = Workspace:GetServerTimeNow()
 
     return summary
 end
