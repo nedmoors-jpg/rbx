@@ -1,6 +1,6 @@
 local Config = {}
 
-Config.GameName = "Crystal Rush Tycoon"
+Config.GameName = "Crystal Rush"
 Config.ZoneSpacing = 220
 Config.ZoneY = 0
 Config.ZoneSize = Vector3.new(140, 1, 140)
@@ -21,7 +21,12 @@ Config.Zones = {
         OrbColor = Color3.fromRGB(83, 203, 255),
         RareOrbValue = 8,
         RareChance = 0.08,
-        OrbDensity = 26
+        OrbDensity = 26,
+        Height = 0,
+        TerrainMaterial = Enum.Material.Grass,
+        TerrainColor = Color3.fromRGB(52, 157, 78),
+        AccentColor = Color3.fromRGB(124, 255, 190),
+        Props = { Trees = 6, Crystals = 4, Rocks = 4 }
     },
     {
         Name = "Crystal Caves",
@@ -31,7 +36,12 @@ Config.Zones = {
         OrbColor = Color3.fromRGB(255, 89, 89),
         RareOrbValue = 30,
         RareChance = 0.1,
-        OrbDensity = 28
+        OrbDensity = 28,
+        Height = 8,
+        TerrainMaterial = Enum.Material.Rock,
+        TerrainColor = Color3.fromRGB(76, 86, 112),
+        AccentColor = Color3.fromRGB(255, 153, 153),
+        Props = { Crystals = 7, Pillars = 4 }
     },
     {
         Name = "Sunspire Desert",
@@ -41,7 +51,12 @@ Config.Zones = {
         OrbColor = Color3.fromRGB(245, 205, 48),
         RareOrbValue = 70,
         RareChance = 0.12,
-        OrbDensity = 30
+        OrbDensity = 30,
+        Height = 4,
+        TerrainMaterial = Enum.Material.Sand,
+        TerrainColor = Color3.fromRGB(224, 186, 92),
+        AccentColor = Color3.fromRGB(255, 230, 132),
+        Props = { Crystals = 5, Pillars = 3, Flames = 2 }
     },
     {
         Name = "Storm Peaks",
@@ -51,7 +66,12 @@ Config.Zones = {
         OrbColor = Color3.fromRGB(124, 156, 255),
         RareOrbValue = 140,
         RareChance = 0.14,
-        OrbDensity = 32
+        OrbDensity = 32,
+        Height = 14,
+        TerrainMaterial = Enum.Material.Basalt,
+        TerrainColor = Color3.fromRGB(140, 147, 181),
+        AccentColor = Color3.fromRGB(170, 198, 255),
+        Props = { Crystals = 6, Pillars = 4, Storm = 3 }
     },
     {
         Name = "Luminous Lagoon",
@@ -61,7 +81,12 @@ Config.Zones = {
         OrbColor = Color3.fromRGB(16, 252, 194),
         RareOrbValue = 320,
         RareChance = 0.16,
-        OrbDensity = 34
+        OrbDensity = 34,
+        Height = 6,
+        TerrainMaterial = Enum.Material.SmoothPlastic,
+        TerrainColor = Color3.fromRGB(34, 112, 120),
+        AccentColor = Color3.fromRGB(120, 255, 227),
+        Props = { Crystals = 7, Water = true }
     },
     {
         Name = "Galactic Rift",
@@ -71,7 +96,12 @@ Config.Zones = {
         OrbColor = Color3.fromRGB(206, 44, 255),
         RareOrbValue = 650,
         RareChance = 0.18,
-        OrbDensity = 36
+        OrbDensity = 36,
+        Height = 20,
+        TerrainMaterial = Enum.Material.Neon,
+        TerrainColor = Color3.fromRGB(51, 12, 77),
+        AccentColor = Color3.fromRGB(216, 144, 255),
+        Props = { Crystals = 9, Void = true }
     }
 }
 
@@ -113,39 +143,60 @@ Config.Rebirth = {
 
 Config.Gamepasses = {
     VIP = {
-        Name = "VIP Quantum Membership",
-        Benefit = "Permanent 2x deposit multiplier, golden name tag",
+        Name = "Crystal VIP",
+        Benefit = "+10% Energy, VIP chat tag, exclusive shop",
         Price = 399,
-        Id = 0,
-        MultiplierBonus = 2
+        Id = 1476014436,
+        DepositBonus = 0.1,
+        ChatTag = "VIP",
+        ChatColor = Color3.fromRGB(255, 226, 110)
     },
-    Speed = {
+    HYPER_SPRINT = {
         Name = "Hyper Sprint",
-        Benefit = "+6 WalkSpeed permanently",
+        Benefit = "+50% movement speed toggle",
         Price = 149,
-        Id = 0,
-        ExtraSpeed = 6
+        Id = 1475776403,
+        SpeedMultiplier = 1.5
     },
-    InfiniteStorage = {
+    INFINITE_STORAGE = {
         Name = "Infinite Storage",
         Benefit = "Never run out of backpack space",
         Price = 799,
-        Id = 0
+        Id = 1476396573
     },
-    LuckyAura = {
+    LUCKY_AURA = {
         Name = "Lucky Aura",
-        Benefit = "50% more rare shards whenever you collect",
+        Benefit = "+20% luck for rare shards and pet rolls",
         Price = 249,
-        Id = 0,
-        RareBonus = 0.5
+        Id = 1476674539,
+        LuckBonus = 0.2
     },
-    AutoCollector = {
+    AUTO_COLLECTOR = {
         Name = "Auto Collector Drone",
         Benefit = "Automatically vacuum nearby shards",
         Price = 499,
-        Id = 0,
+        Id = 1475412430,
         Radius = 14,
         Interval = 1.5
+    }
+}
+
+Config.VIPShop = {
+    {
+        Key = "VipBoost10",
+        Name = "VIP Turbo Boost",
+        Description = "x2 converter boost for 10 minutes",
+        Cost = 4500,
+        Multiplier = 2,
+        Duration = 600
+    },
+    {
+        Key = "VipBoost30",
+        Name = "VIP Radiant Surge",
+        Description = "x2.5 converter boost for 30 minutes",
+        Cost = 12500,
+        Multiplier = 2.5,
+        Duration = 1800
     }
 }
 
@@ -160,6 +211,69 @@ Config.DeveloperProducts = {
         { Key = "TwoXMultiplier10", Name = "10 min 2x Converter", Duration = 600, Multiplier = 2, Price = 99, Id = 0 },
         { Key = "TwoXMultiplier30", Name = "30 min 2x Converter", Duration = 1800, Multiplier = 2, Price = 249, Id = 0 }
     }
+}
+
+Config.DynamicEvents = {
+    CRYSTAL_SURGE = {
+        Name = "Crystal Surge",
+        Description = "Crystals overflow with energy, doubling values and spawn rate.",
+        Duration = 75,
+        Color = Color3.fromRGB(111, 210, 255),
+        Announcement = "Crystal Surge detected in %s!",
+        ZoneModifier = {
+            ValueMultiplier = 1.8,
+            SpawnRateMultiplier = 2,
+            TargetMultiplier = 1.6,
+            RareChanceBonus = 0.18,
+            ColorShift = Color3.fromRGB(255, 255, 255),
+            Glow = true
+        },
+        Burst = {
+            Count = 4,
+            ValueMultiplier = 4,
+            Size = Vector3.new(4.4, 4.4, 4.4),
+            Interval = 14,
+            Duration = 12,
+            Sparkle = true,
+            LightBrightness = 3
+        }
+    },
+    PRISMATIC_BLOOM = {
+        Name = "Prismatic Bloom",
+        Description = "Giant prisms sprout across the zone with mega payouts.",
+        Duration = 65,
+        Color = Color3.fromRGB(255, 177, 231),
+        Announcement = "%s is blooming with prismatic crystals!",
+        ZoneModifier = {
+            ValueMultiplier = 1.5,
+            SpawnRateMultiplier = 1.6,
+            TargetMultiplier = 1.4,
+            RareChanceBonus = 0.22,
+            ColorShift = Color3.fromRGB(255, 177, 231),
+            Glow = true
+        },
+        Burst = {
+            Count = 5,
+            ValueMultiplier = 6,
+            Size = Vector3.new(5.6, 5.6, 5.6),
+            Interval = 18,
+            Duration = 18,
+            Sparkle = true,
+            LightBrightness = 4
+        }
+    }
+}
+
+Config.DynamicEventCooldown = {
+    Min = 55,
+    Max = 85
+}
+
+Config.Combo = {
+    Window = 4,
+    BonusPerStreak = 0.04,
+    MaxBonus = 0.4,
+    NotifyThreshold = 5
 }
 
 Config.TutorialMessages = {
