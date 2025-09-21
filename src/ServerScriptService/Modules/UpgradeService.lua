@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 local SessionService = require(script.Parent:WaitForChild("SessionService"))
@@ -54,7 +55,7 @@ function UpgradeService.GetCapacity(player)
     local stats = Config.getUpgradeStats("Capacity", level)
     local capacity = stats and stats.Capacity or 0
 
-    if UpgradeService.Monetization and UpgradeService.Monetization.PlayerHasPass(player, "InfiniteStorage") then
+    if UpgradeService.Monetization and UpgradeService.Monetization.PlayerHasPass(player, "INFINITE_STORAGE") then
         capacity = math.huge
     end
 
@@ -70,8 +71,11 @@ function UpgradeService.GetWalkSpeed(player)
     local stats = Config.getUpgradeStats("Speed", session.Data.SpeedLevel)
     local speed = stats and stats.WalkSpeed or Config.BaseWalkSpeed
 
-    if UpgradeService.Monetization and UpgradeService.Monetization.PlayerHasPass(player, "Speed") then
-        speed += Config.Gamepasses.Speed.ExtraSpeed
+    if UpgradeService.Monetization and UpgradeService.Monetization.PlayerHasPass(player, "HYPER_SPRINT") then
+        local enabled = SessionService.GetSetting(player, "HyperSprint")
+        if enabled then
+            speed *= Config.Gamepasses.HYPER_SPRINT.SpeedMultiplier
+        end
     end
 
     return speed
@@ -87,10 +91,6 @@ function UpgradeService.GetConverterMultiplier(player)
 
     local stats = Config.getUpgradeStats("Converter", session.Data.ConverterLevel)
     local multiplier = stats and stats.Multiplier or 1
-
-    if UpgradeService.Monetization and UpgradeService.Monetization.PlayerHasPass(player, "VIP") then
-        multiplier *= Config.Gamepasses.VIP.MultiplierBonus
-    end
 
     local boosts = SessionService.GetBoosts(player)
     for key, data in pairs(boosts) do
@@ -146,6 +146,8 @@ function UpgradeService.GetStateSummary(player)
         end
     end
 
+    summary.Settings = SessionService.GetSettings(player)
+
     local boosts = SessionService.GetBoosts(player)
     local boostSummary = {}
     local now = os.time()
@@ -156,6 +158,9 @@ function UpgradeService.GetStateSummary(player)
         }
     end
     summary.ActiveBoosts = boostSummary
+
+    summary.Combo = SessionService.GetComboInfo(player)
+    summary.ServerTime = Workspace:GetServerTimeNow()
 
     return summary
 end
@@ -240,6 +245,20 @@ end
 
 function UpgradeService.ApplyCharacterScaling(player)
     task.defer(applyWalkSpeed, player)
+end
+
+function UpgradeService.CanUseHyperSprint(player)
+    if not UpgradeService.Monetization then
+        return false
+    end
+    return UpgradeService.Monetization.PlayerHasPass(player, "HYPER_SPRINT")
+end
+
+function UpgradeService.CanUseAutoCollector(player)
+    if not UpgradeService.Monetization then
+        return false
+    end
+    return UpgradeService.Monetization.PlayerHasPass(player, "AUTO_COLLECTOR")
 end
 
 return UpgradeService
