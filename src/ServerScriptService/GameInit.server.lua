@@ -2,15 +2,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"))
 
-local RemotesModule = require(script.Parent.Modules.Remotes)
-local MapBuilder = require(script.Parent.Modules.MapBuilder)
-local SessionService = require(script.Parent.Modules.SessionService)
-local Monetization = require(script.Parent.Modules.Monetization)
-local UpgradeService = require(script.Parent.Modules.UpgradeService)
-local OrbManager = require(script.Parent.Modules.OrbManager)
-local ChatEffects = require(script.Parent.Modules.ChatEffects)
-local EventService = require(script.Parent.Modules.EventService)
-
 local remotes = RemotesModule.get()
 local mapReferences = MapBuilder.build()
 
