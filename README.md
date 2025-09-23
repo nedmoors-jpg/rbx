@@ -65,12 +65,4 @@ src/
         └── ClientController.client.lua
 ```
 
-Deploy with Rojo or sync directly into Studio and publish to make Crystal Rush playable.
 
-## Prebuilt Studio Place (Text-Based)
-
-- `CrystalRush.rbxlx` in the repository root is a fully baked place file exported from the project. Roblox Studio can open this
-  XML variant directly via **File → Open from File…** without requiring Rojo.
-- Because GitHub rejects binary uploads in this environment, only the `.rbxlx` text representation is stored. If you prefer the
-  binary `.rbxl` variant, open the file in Studio and immediately resave it; Studio will emit the binary format locally.
-- The file stays in sync with the Rojo project by running `rojo build -o CrystalRush.rbxlx` after you make changes.
