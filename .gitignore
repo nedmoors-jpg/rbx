@@ -1,0 +1,4 @@
+## Roblox Studio binary exports are omitted because the environment blocks binary uploads.
+*.rbxl
+*.rblx
+*.rbxm

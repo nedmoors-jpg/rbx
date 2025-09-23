@@ -65,4 +65,4 @@ src/
         └── ClientController.client.lua
 ```
 
-Deploy with Rojo or sync directly into Studio and publish to make Crystal Rush playable.
+
